@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String       @id
+  email       String       @unique
+  name        String?
+  createdAt   DateTime     @default(now())
+  documents   Document[]
+  evaluations Evaluation[]
+}
+
+model Document {
+  id          String               @id @default(uuid())
+  userId      String
+  filename    String
+  type        String
+  status      String               @default("PROCESSING")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks      DocumentChunk[]
+  evaluations EvaluationDocument[]
+  @@index([userId])
+}
+
+model DocumentChunk {
+  id         String   @id @default(uuid())
+  documentId String
+  chunkIndex Int
+  content    String
+  metadata   Json?
+  embedding  Unsupported("vector(768)")?
+  createdAt  DateTime @default(now())
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  evidence   Evidence[]
+  @@index([documentId])
+}
+
+model Evaluation {
+  id          String               @id @default(uuid())
+  userId      String
+  name        String
+  question    String
+  category    String
+  status      EvaluationStatus     @default(PENDING)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents   EvaluationDocument[]
+  responses   ModelResponse[]
+  guardrails  GuardrailResult[]
+  @@index([userId])
+}
+
+model EvaluationDocument {
+  evaluationId String
+  documentId   String
+  evaluation   Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  document     Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  @@id([evaluationId, documentId])
+}
+
+model ModelResponse {
+  id           String   @id @default(uuid())
+  evaluationId String
+  provider     String
+  model        String
+  answer       String
+  createdAt    DateTime @default(now())
+  evaluation   Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  claims       Claim[]
+  @@index([evaluationId])
+}
+
+model Claim {
+  id           String       @id @default(uuid())
+  responseId   String
+  text         String
+  status       ClaimStatus
+  explanation  String?
+  createdAt    DateTime     @default(now())
+  response     ModelResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  evidence     Evidence[]
+  @@index([responseId])
+}
+
+model Evidence {
+  id        String         @id @default(uuid())
+  claimId   String
+  chunkId   String
+  content   String
+  score     Float
+  claim     Claim         @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  chunk     DocumentChunk @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+  @@index([claimId])
+}
+
+model GuardrailResult {
+  id           String     @id @default(uuid())
+  evaluationId String
+  type         String
+  status       String
+  message      String
+  evaluation   Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  @@index([evaluationId])
+}
+
+enum EvaluationStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum ClaimStatus {
+  SUPPORTED
+  PARTIAL
+  UNSUPPORTED
+  CONTRADICTED
+}
+
