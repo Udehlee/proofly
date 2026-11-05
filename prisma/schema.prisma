@@ -121,8 +121,8 @@ enum EvaluationStatus {
 
 enum ClaimStatus {
   SUPPORTED
-  PARTIAL
-  UNSUPPORTED
   CONTRADICTED
+  UNSUPPORTED
+  UNCERTAIN
 }
 
