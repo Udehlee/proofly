@@ -14,38 +14,38 @@ Proofly is an evidence-grounded AI evaluation platform and document fact-checkin
 
 ## System Architecture
 ```mermaid
-flowchart TD
-    U[User] --> A[Upload Documents]
-    U --> Q[Ask a Question]
+sequenceDiagram
+    participant User
+    participant App as Proofly
+    participant Auth as Supabase Auth
+    participant DB as PostgreSQL + pgvector
+    participant Embed as Gemini Embeddings
+    participant AI as OpenAI / Groq
+    participant Verify as Claim Verification
 
-    A --> B[Document Extraction and OCR]
-    B --> C[Text Chunking]
-    C --> D[Gemini Embeddings]
-    D --> E[(PostgreSQL + pgvector)]
+    User->>App: Upload documents
+    App->>App: Extract text, OCR and chunk
+    App->>Embed: Generate document embeddings
+    Embed-->>App: Return embeddings
+    App->>DB: Store document chunks and vectors
 
-    Q --> F[Question Embedding]
-    F --> G[Semantic Evidence Retrieval]
-    E --> G
+    User->>App: Ask a question
+    App->>Auth: Verify user session
+    Auth-->>App: Return authentication status
+    App->>Embed: Generate question embedding
+    Embed-->>App: Return query embedding
+    App->>DB: Retrieve relevant evidence
+    DB-->>App: Return evidence chunks
 
-    G --> H[Retrieved Evidence]
-    H --> I[Concurrent Multi-Model Evaluation]
-
-    I --> J[OpenAI]
-    I --> K[Groq]
-
-    J --> L[AI Responses]
-    K --> L
-
-    L --> M[Atomic Claim Extraction]
-    M --> N[Claim-Level Evidence Retrieval]
-    N --> O[4-State Claim Verification]
-
-    O --> P[Automated Guardrails]
-    P --> R[Accuracy and Grounding Scores]
-    R --> S[(PostgreSQL)]
-    S --> T[Evaluation Results and Evidence]
-
-    AUTH[Supabase Authentication] -.-> U
+    App->>AI: Send question and evidence
+    AI-->>App: Return model responses
+    App->>Verify: Extract and verify factual claims
+    Verify->>DB: Retrieve claim-specific evidence
+    DB-->>Verify: Return supporting evidence
+    Verify-->>App: Return 4-state verification results
+    App->>App: Apply guardrails and calculate scores
+    App->>DB: Save evaluation results
+    App-->>User: Display responses, evidence and scores
 ```
 
 ## Requirements
