@@ -14,7 +14,7 @@ Proofly is an evidence-grounded AI evaluation platform and document fact-checkin
 
 ## System Architecture
 ```mermaid
-
+flowchart TD
     U[User] --> A[Upload Documents]
     U --> Q[Ask a Question]
 
@@ -30,7 +30,7 @@ Proofly is an evidence-grounded AI evaluation platform and document fact-checkin
     G --> H[Retrieved Evidence]
     H --> I[Concurrent Multi-Model Evaluation]
 
-    I --> J[Gemini]
+    I --> J[OpenAI]
     I --> K[Groq]
 
     J --> L[AI Responses]
